@@ -1,4 +1,4 @@
-module efreedomwall
+module rest_service
 
 go 1.17
 
