@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -363,6 +365,9 @@ func getEnv(keyName string, defaultValue string) string {
 	return defaultValue
 }
 
+//go:embed template.html.tmpl
+var templateFile string
+
 func main() {
 	err := godotenv.Load()
 	if err != nil {
@@ -372,13 +377,27 @@ func main() {
 	wcfServiceUrl := getEnv("SERVICE_URL", "http://localhost:5000/Service1")
 	env := getEnv("ENV", "development")
 	port := getEnv("PORT", "4003")
+	isProd := strings.ToLower(env) == "production"
+	frontendFolder := getEnv("FRONTEND_FOLDER", "")
+	if len(frontendFolder) == 0 {
+		gotFrontendFolder, err := filepath.Abs(filepath.Join("..", "frontend"))
+		if err != nil {
+			log.Fatalln(err)
+		}
+		frontendFolder = gotFrontendFolder
+	}
+
+	distFolder := frontendFolder
+	if isProd {
+		distFolder = filepath.Join(frontendFolder, "dist")
+	}
 
 	viteConfig := &viteGlue.ViteConfig{
 		Environment: env,
 		AssetsPath:  ".",
 		EntryPoint:  "src/main.ts",
 		Platform:    "vue",
-		FS:          os.DirFS("."),
+		FS:          os.DirFS(distFolder),
 	}
 
 	glue, err := viteGlue.NewVueGlue(viteConfig)
@@ -386,7 +405,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	ts, err := template.ParseFiles("./template.html.tmpl")
+	ts, err := template.New("index").Parse(templateFile)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -404,7 +423,12 @@ func main() {
 		log.Fatalln("could not set up static file server", err)
 	}
 
-	r.Handle("/src/*", fsHandler)
+	assetsEndpointName := "src"
+	if isProd {
+		assetsEndpointName = "assets"
+	}
+
+	r.Handle(fmt.Sprintf("/%s/*", assetsEndpointName), fsHandler)
 	r.Mount("/api", apiService.Routes())
 	r.Get("/", wrapHandler(func(w http.ResponseWriter, r *http.Request) error {
 		return ts.Execute(w, struct {
