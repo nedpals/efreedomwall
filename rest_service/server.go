@@ -233,7 +233,7 @@ func (api *APIService) Routes() chi.Router {
 
 		r.Patch("/", wrapHandler(func(rw http.ResponseWriter, r *http.Request) error {
 			password := getPassword(r)
-			var post *myservice.Post
+			post := new(myservice.Post)
 			if err := json.NewDecoder(r.Body).Decode(post); err != nil {
 				return &Response{
 					StatusCode: http.StatusBadRequest,
@@ -241,6 +241,11 @@ func (api *APIService) Routes() chi.Router {
 					OrigError:  err,
 				}
 			}
+
+			if password == nil && post.Password != nil {
+				password = post.Password
+			}
+
 			post.Id = getPostId(r)
 			result, err := api.Client.UpdatePost(&myservice.UpdatePost{
 				Post:     post,
