@@ -419,6 +419,7 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"GET", "POST", "PATCH", "DELETE"},
 	}))
 
 	client := myservice.NewIService1(soap.NewClient(fmt.Sprintf("%s/basichttp", wcfServiceUrl)))
