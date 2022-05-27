@@ -1,5 +1,7 @@
 <template>
     <div class="content-container py-8">
+        <post-form v-if="showEditor" :post="post" @success="router.go(0)" />
+
         <article class="box">
             <div v-if="isLockedLoading || isLoading" class="py-12 min-h-xl flex flex-col items-center justify-center">
                 <p class="text-3xl">Loading...</p>
@@ -35,6 +37,12 @@
                         <icon-view />
                         <span>{{ postViews }} views</span>
                     </div>
+                    <button 
+                        @click="() => editPost()"
+                        class="hover:text-gray-700 flex items-center space-x-1 flex items-center space-x-1">
+                        <icon-edit />
+                        <span>Edit</span>
+                    </button>
                     <button
                         class="hover:text-gray-700 flex items-center space-x-1"
                         @click="isPostLiked ? unlikePost({ sessionId }) : likePost({ sessionId })">
@@ -59,6 +67,7 @@ import IconDelete from '~icons/uil/trash-alt';
 import IconLike from '~icons/uil/heart';
 import IconClock from '~icons/uil/clock';
 import IconView from '~icons/uil/eye';
+import IconEdit from '~icons/uil/pen';
 
 import { useRoute, useRouter } from 'vue-router';
 import { client } from '../client';
@@ -66,6 +75,7 @@ import { useQuery, useMutation } from 'vue-query';
 import { ref } from 'vue';
 import { generateSessionId, sessionId } from '../session';
 import { humanizeTime } from '../utils';
+import PostForm from '../components/PostForm.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -210,6 +220,10 @@ function useDeletePostMutation(id: string) {
     });
 }
 
+function editPost() {
+    showEditor.value = true;
+}
+
 function enterPost(ev: SubmitEvent) {
     if (!(ev.target instanceof HTMLFormElement))
         return;
@@ -219,6 +233,7 @@ function enterPost(ev: SubmitEvent) {
     unlockPost({ password: storedPassword.value });
 }
 
+const showEditor = ref(false);
 const postId = route.params.post_id as string;
 const { data: postViews, refetch: refetchPostViews } = usePostViewsQuery(postId);
 const { data: postLikes, refetch: refetchPostLikes } = usePostLikesQuery(postId);

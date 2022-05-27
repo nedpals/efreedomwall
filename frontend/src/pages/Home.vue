@@ -7,22 +7,8 @@
     </div>
 
     <div class="content-container main-content">
-      <form class="box with-padding post-form" @submit.prevent="submitForm($event as SubmitEvent)">
-          <div class="field">
-              <textarea placeholder="What's on your mind?" name="post_content" id="post_content"></textarea>
-          </div>
-          <div class="field-group">
-            <div class="field flex-1">
-                <label for="post_poster">Poster</label>
-                <input type="text" name="post_poster" id="post_poster" value="Anonymous" />
-            </div>
-            <div class="field flex-1">
-                <label for="post_password">Password <span class="text-gray-500">(Optional)</span> </label>
-                <input type="password" name="post_password" id="post_password" />
-            </div>
-          </div>
-          <button class="button is-primary self-end mt-2 px-8" type="submit">Post</button>
-      </form>
+      <post-form @success="() => refetch()" />
+
       <section id="posts" class="mt-8">
           <h2 class="text-4xl font-bold mb-4">Recent Posts</h2>
           <span v-if="isLoading">Loading...</span>
@@ -63,7 +49,7 @@ import { Post, Posts } from '../types';
 import { client } from '../client';
 import { useInfiniteQuery } from 'vue-query';
 import { humanizeTime } from '../utils';
-import { notify } from 'notiwind';
+import PostForm from '../components/PostForm.vue';
 
 function useRecentPostsQuery() {
   return useInfiniteQuery<Posts>(['recentPosts'], async ({ pageParam = 1 }) => {
@@ -92,39 +78,7 @@ function useRecentPostsQuery() {
   });
 }
 
-notify({
-  type: 'info',
-  title: 'test',
-  text: 'test'
-});
-
 const { data: postList, refetch, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } = useRecentPostsQuery();
-
-async function submitForm(e: SubmitEvent) {
-    if (!(e.target instanceof HTMLFormElement))
-        return;
-
-    const form = e.target;
-    const data = new FormData(form);
-    const content = data.get('post_content');
-    const poster = data.get('post_poster');
-    const password = data.get('post_password');
-    const resp = await client('/posts', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            Content: content,
-            Poster: poster,
-            Password: !password || password.toString().length == 0 ? null : password.toString()
-        })
-    });
-    if (resp.ok) {
-      await refetch.value();
-      form.reset();
-    }
-}
 </script>
 
 <style lang="postcss">
@@ -147,34 +101,6 @@ async function submitForm(e: SubmitEvent) {
 
 .home_page .main-content {
   @apply -mt-24;
-}
-
-.home_page .post-form {
-  @apply flex flex-col shadow-lg border-0 items-start;
-}
-
-.home_page .post-form .field {
-  @apply my-1 flex flex-col w-full;
-}
-
-.home_page .post-form .field-group {
-  @apply flex w-full;
-}
-
-.home_page .post-form .field-group > .field {
-  @apply p-2 w-full;
-}
-
-.home_page .post-form .field-group > .field:first-child {
-  @apply pl-0;
-}
-
-.home_page .post-form .field-group > .field:last-child {
-  @apply pr-0;
-}
-
-.home_page .post-form label {
-  @apply mb-2;
 }
 
 .home_page textarea {
