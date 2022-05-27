@@ -4,6 +4,7 @@ using Microsoft.Data.Sqlite;
 
 namespace EFreedomWallService
 {
+    [ServiceBehavior(IncludeExceptionDetailInFaults = true)]
     public class Service1 : IService1
     {
         private SqliteConnection newConnection()
@@ -129,7 +130,9 @@ namespace EFreedomWallService
                 connection.Open();
                 var cmd = connection.CreateCommand();
                 var passClause = password == null || password.Length == 0 ? "password IS NULL" : "password = $password";
-                cmd.CommandText = $"UPDATE posts SET content = $content, poster = $poster, password = $new_password WHERE id = $id AND {passClause}";
+                var newPassClause = post.Password != null && post.Password.Length > 0 ? ", password = $new_password " : "";
+                cmd.CommandText = $"UPDATE posts SET content = $content, poster = $poster {newPassClause} WHERE id = $id AND {passClause}";
+                cmd.Parameters.AddWithValue("$id", post.Id);
                 cmd.Parameters.AddWithValue("$content", post.Content);
                 cmd.Parameters.AddWithValue("$poster", post.Poster);
                 cmd.Parameters.AddWithValue("$new_password", post.Password);

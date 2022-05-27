@@ -14,12 +14,12 @@ builder.WebHost.ConfigureKestrel((context, options) =>
 builder.Services.AddServiceModelServices().AddServiceModelMetadata();
 
 // Logging
-builder.Services.AddHttpLogging(logging => {
-    logging.LoggingFields = HttpLoggingFields.RequestPropertiesAndHeaders | HttpLoggingFields.RequestBody | HttpLoggingFields.ResponseBody;
-});
+// builder.Services.AddHttpLogging(logging => {
+//     logging.LoggingFields = HttpLoggingFields.RequestPropertiesAndHeaders | HttpLoggingFields.RequestBody | HttpLoggingFields.ResponseBody;
+// });
 
 var app = builder.Build();
-app.UseHttpLogging();
+// app.UseHttpLogging();
 
 app.UseServiceModel(builder =>
 {
